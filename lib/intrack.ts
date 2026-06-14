@@ -11,7 +11,10 @@ declare global {
   interface Window {
     $Intk: (...args: unknown[]) => void;
     $InTrack: {
-      init: (config: object) => void;
+      init?: (config: object) => void;
+      getDeviceId?: () => string;
+      getUserId?: () => string | null;
+      SubscriptionWebPushInfo?: (callback: (status: PushSubscriptionStatus) => void) => void;
       q?: unknown[];
       [key: string]: unknown;
     };
@@ -21,18 +24,28 @@ declare global {
 
 export function getDeviceId(): Promise<string> {
   return new Promise((resolve) => {
+    const direct = window.$InTrack?.getDeviceId?.();
+    if (direct) { resolve(direct); return; }
     window.$Intk('getDeviceId', resolve);
   });
 }
 
 export function getUserId(): Promise<string | null> {
   return new Promise((resolve) => {
+    if (typeof window.$InTrack?.getUserId === 'function') {
+      resolve(window.$InTrack.getUserId!());
+      return;
+    }
     window.$Intk('getUserId', resolve);
   });
 }
 
 export function getSubscriptionStatus(): Promise<PushSubscriptionStatus> {
   return new Promise((resolve) => {
+    if (typeof window.$InTrack?.SubscriptionWebPushInfo === 'function') {
+      window.$InTrack.SubscriptionWebPushInfo!(resolve);
+      return;
+    }
     window.$Intk('SubscriptionWebPushInfo', resolve);
   });
 }

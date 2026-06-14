@@ -24,9 +24,8 @@ export function InTrackProvider({ children }: { children: React.ReactNode }) {
 
   const [state, setState] = useState<SDKState>(configMissing ? 'error' : 'loading');
 
-  // Listen for the custom events dispatched from inside the IIFE's s.onload /
-  // s.onerror — those fire after the inTrack CDN script has actually loaded
-  // and o.init(c) has run, not just when the inline IIFE finishes.
+  // Listen for custom events dispatched from the IIFE's s.onload / s.onerror,
+  // which fire after the inTrack CDN script has actually loaded.
   useEffect(() => {
     if (configMissing) return;
 
@@ -65,7 +64,8 @@ export function InTrackProvider({ children }: { children: React.ReactNode }) {
                 i[a]=i[a]||function(){(o.q=o.q||[]).push(arguments);};
                 s=n.createElement(t);s.async=true;s.src=r;
                 s.onload=function(){
-                  o.init(c);
+                  var sdk=i['$InTrack'];
+                  if(sdk&&typeof sdk.init==='function'){sdk.init(c);}
                   window.dispatchEvent(new Event('intrack:ready'));
                 };
                 s.onerror=function(){
