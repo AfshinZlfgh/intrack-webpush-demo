@@ -55,7 +55,7 @@ const token = await getToken(messaging, {
 });
 
 // 3. Hand the FCM token to inTrack (do NOT call InitWebPush in this mode)
-$Intk('sendFireBaseToken', token);`;
+Intk('sendFireBaseToken', token);`;
 
 export default function FirebasePushPage() {
   const { sdkReady, sdkError, configMissing } = useInTrack();

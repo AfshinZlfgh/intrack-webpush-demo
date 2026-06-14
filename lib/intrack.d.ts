@@ -3,13 +3,13 @@
 // interface augmentation applies everywhere without explicit imports.
 
 interface Window {
-  // The async queue function — call before SDK finishes loading.
-  $Intk: (...args: unknown[]) => void;
+  // The async queue function — call before or after SDK finishes loading.
+  Intk: (...args: unknown[]) => void;
   // The SDK object — available after the CDN script loads and calls init().
-  $InTrack: {
-    init: (config: object) => void;
+  InTrack: {
+    init?: (config: object) => void;
     q?: unknown[];
     [key: string]: unknown;
   };
-  $inTrack_config: object;
+  inTrack_config: object;
 }

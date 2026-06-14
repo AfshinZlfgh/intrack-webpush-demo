@@ -40,7 +40,7 @@ const PREBUILT: { label: string; event: InTrackEvent }[] = [
 const CODE_EVENTS = `// Custom Event Tracking
 
 // Basic event
-$Intk('sendEvent', {
+Intk('sendEvent', {
   eventName: 'page_view',
   eventData: {
     page: '/home',
@@ -49,7 +49,7 @@ $Intk('sendEvent', {
 });
 
 // Event with userId (logs in the user if not already)
-$Intk('sendEvent', {
+Intk('sendEvent', {
   userId: 'user_abc123',
   eventName: 'add_to_cart',
   eventData: {

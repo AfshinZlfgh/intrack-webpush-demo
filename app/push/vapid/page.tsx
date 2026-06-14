@@ -45,7 +45,7 @@ const CODE_INIT = `// 1. Host inTrack SW at your domain root:
 //    → serve at https://your-domain.com/sw.js
 
 // 2. Init SDK (async snippet in layout.tsx / <head>)
-var $inTrack_config = {
+var inTrack_config = {
   app_key: 'YOUR_APP_KEY',
   auth_key: 'YOUR_AUTH_KEY',
   public_key: 'YOUR_PUBLIC_KEY',
@@ -54,7 +54,7 @@ var $inTrack_config = {
 };
 
 // 3. Call InitWebPush after SDK is loaded
-$Intk('InitWebPush', {
+Intk('InitWebPush', {
   subscriptionStyle: {
     subscriptionTheme: 1,
     subscriptionBtnAllowTxt: 'Allow',
@@ -68,13 +68,13 @@ $Intk('InitWebPush', {
 });
 
 // 4. Check status
-$Intk('SubscriptionWebPushInfo', (status) => {
+Intk('SubscriptionWebPushInfo', (status) => {
   console.log('Push status:', status);
   // 'subscribed' | 'unsubscribed' | 'denied' | 'canceled' | 'no_init'
 });
 
 // 5. Unsubscribe
-$Intk('UnsubscribeWebPush');`;
+Intk('UnsubscribeWebPush');`;
 
 export default function VapidPage() {
   const { sdkReady, sdkError, configMissing } = useInTrack();

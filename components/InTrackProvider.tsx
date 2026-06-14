@@ -58,14 +58,13 @@ export function InTrackProvider({ children }: { children: React.ReactNode }) {
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              var $inTrack_config = ${JSON.stringify(config)};
+              var inTrack_config = ${JSON.stringify(config)};
               (function(i,n,t,r,a,c){
-                o=i['$InTrack']=i['$InTrack']||{};
+                o=i['InTrack']=i['InTrack']||{};
                 i[a]=i[a]||function(){(o.q=o.q||[]).push(arguments);};
                 s=n.createElement(t);s.async=true;s.src=r;
                 s.onload=function(){
-                  var sdk=i['$InTrack'];
-                  if(sdk&&typeof sdk.init==='function'){sdk.init(c);}
+                  o.init(c);
                   window.dispatchEvent(new Event('intrack:ready'));
                 };
                 s.onerror=function(){
@@ -74,7 +73,7 @@ export function InTrackProvider({ children }: { children: React.ReactNode }) {
                 e=n.getElementsByTagName(t)[0];e.parentNode.insertBefore(s,e);
               })(window,document,'script',
                 '//static1.intrack.ir/api/web/download/sdk/v1/inTrack.min.js?v=00',
-                '$Intk',$inTrack_config);
+                'Intk',inTrack_config);
             `,
           }}
         />

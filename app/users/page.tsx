@@ -8,13 +8,13 @@ import { getDeviceId, getUserId, loginUser, logoutUser, updateUserProfile } from
 const CODE_USERS = `// User Identification
 
 // Get anonymous device ID (always available after SDK init)
-$Intk('getDeviceId', (deviceId) => {
+Intk('getDeviceId', (deviceId) => {
   console.log('Device ID:', deviceId);
 });
 
 // Login — assigns a known userId to the current device.
 // All previous anonymous data is merged into this user profile.
-$Intk('login', {
+Intk('login', {
   userId: 'user_abc123',       // required, alphanumeric + hyphens
   firstName: 'Ali',
   lastName: 'Mohammadi',
@@ -25,19 +25,19 @@ $Intk('login', {
 });
 
 // Get current userId (null if not logged in)
-$Intk('getUserId', (userId) => {
+Intk('getUserId', (userId) => {
   console.log('User ID:', userId);
 });
 
 // Update profile (userId is still required)
-$Intk('updateProfile', {
+Intk('updateProfile', {
   userId: 'user_abc123',
   city: 'Tehran',
   attributes: { plan: 'premium', signupSource: 'web' },
 });
 
 // Logout — detaches this device from the known user
-$Intk('logout');`;
+Intk('logout');`;
 
 export default function UsersPage() {
   const { sdkReady, sdkError, configMissing } = useInTrack();
