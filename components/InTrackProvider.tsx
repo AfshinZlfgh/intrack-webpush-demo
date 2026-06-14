@@ -1,7 +1,7 @@
 'use client';
 
 import Script from 'next/script';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { InTrackConfig } from '@/lib/types';
 
 type SDKState = 'loading' | 'ready' | 'error';
@@ -23,6 +23,24 @@ export function InTrackProvider({ children }: { children: React.ReactNode }) {
     !process.env.NEXT_PUBLIC_INTRACK_PUBLIC_KEY;
 
   const [state, setState] = useState<SDKState>(configMissing ? 'error' : 'loading');
+
+  // Listen for the custom events dispatched from inside the IIFE's s.onload /
+  // s.onerror — those fire after the inTrack CDN script has actually loaded
+  // and o.init(c) has run, not just when the inline IIFE finishes.
+  useEffect(() => {
+    if (configMissing) return;
+
+    const onReady = () => setState('ready');
+    const onError = () => setState('error');
+
+    window.addEventListener('intrack:ready', onReady);
+    window.addEventListener('intrack:error', onError);
+
+    return () => {
+      window.removeEventListener('intrack:ready', onReady);
+      window.removeEventListener('intrack:error', onError);
+    };
+  }, [configMissing]);
 
   const config: InTrackConfig = {
     app_key: process.env.NEXT_PUBLIC_INTRACK_APP_KEY ?? '',
@@ -46,15 +64,19 @@ export function InTrackProvider({ children }: { children: React.ReactNode }) {
                 o=i['$InTrack']=i['$InTrack']||{};
                 i[a]=i[a]||function(){(o.q=o.q||[]).push(arguments);};
                 s=n.createElement(t);s.async=true;s.src=r;
-                s.onload=function(){o.init(c);};
+                s.onload=function(){
+                  o.init(c);
+                  window.dispatchEvent(new Event('intrack:ready'));
+                };
+                s.onerror=function(){
+                  window.dispatchEvent(new Event('intrack:error'));
+                };
                 e=n.getElementsByTagName(t)[0];e.parentNode.insertBefore(s,e);
               })(window,document,'script',
                 '//static1.intrack.ir/api/web/download/sdk/v1/inTrack.min.js?v=00',
                 '$Intk',$inTrack_config);
             `,
           }}
-          onLoad={() => setState('ready')}
-          onError={() => setState('error')}
         />
       )}
       {children}
