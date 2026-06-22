@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useInTrack } from '@/components/InTrackProvider';
 import { CodeBlock } from '@/components/CodeBlock';
@@ -133,7 +134,8 @@ export default function EventsPage() {
 
       {configMissing && (
         <div className="rounded-lg border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm text-yellow-800 dark:text-yellow-300">
-          inTrack SDK keys are not configured. Set <code className="font-mono text-xs">NEXT_PUBLIC_INTRACK_*</code> in <code className="font-mono text-xs">.env.local</code>.
+          inTrack SDK keys are not configured. Go to{' '}
+          <Link href="/setup" className="underline font-medium">Setup</Link> to enter your credentials.
         </div>
       )}
 

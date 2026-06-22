@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
 import { useInTrack } from '@/components/InTrackProvider';
 import { FirebaseConfigForm } from '@/components/FirebaseConfigForm';
 import { PushStatus } from '@/components/PushStatus';
@@ -58,17 +59,13 @@ const token = await getToken(messaging, {
 Intk('sendFireBaseToken', token);`;
 
 export default function FirebasePushPage() {
-  const { sdkReady, sdkError, configMissing } = useInTrack();
-  const [config, setConfig] = useState<FirebaseConfig | null>(null);
+  const { sdkReady, sdkError, configMissing, panelType, hydrated } = useInTrack();
+  // Lazy initializer reads localStorage once on the client; the `hydrated` gate
+  // below keeps SSR and first client render in agreement (both render nothing).
+  const [config, setConfig] = useState<FirebaseConfig | null>(() => getStoredFirebaseConfig());
   const [token, setToken] = useState<string | null>(null);
   const [pushStatus, setPushStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [pushError, setPushError] = useState('');
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setConfig(getStoredFirebaseConfig());
-    setHydrated(true);
-  }, []);
 
   const handleConfigSaved = (cfg: FirebaseConfig) => setConfig(cfg);
 
@@ -116,9 +113,26 @@ export default function FirebasePushPage() {
 
       {configMissing && (
         <div className="rounded-lg border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm text-yellow-800 dark:text-yellow-300">
-          inTrack SDK keys are not configured. Set{' '}
-          <code className="font-mono text-xs">NEXT_PUBLIC_INTRACK_*</code> in{' '}
-          <code className="font-mono text-xs">.env.local</code> and restart the server.
+          inTrack SDK keys are not configured. Go to{' '}
+          <Link href="/setup" className="underline font-medium">
+            Setup
+          </Link>{' '}
+          to choose your panel type and enter your credentials.
+        </div>
+      )}
+
+      {panelType === 'vapid' && (
+        <div className="rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4 text-sm text-blue-800 dark:text-blue-300">
+          Your panel is configured as <strong>VAPID</strong>. This Firebase page is shown for
+          reference and won&apos;t reflect your panel. Use{' '}
+          <Link href="/push/vapid" className="underline font-medium">
+            Push: VAPID
+          </Link>{' '}
+          instead, or switch types from{' '}
+          <Link href="/setup" className="underline font-medium">
+            Setup
+          </Link>
+          .
         </div>
       )}
 

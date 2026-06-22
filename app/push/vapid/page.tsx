@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { useInTrack } from '@/components/InTrackProvider';
 import { PushStatus } from '@/components/PushStatus';
 import { CodeBlock } from '@/components/CodeBlock';
@@ -77,17 +78,19 @@ Intk('SubscriptionWebPushInfo', (status) => {
 Intk('UnsubscribeWebPush');`;
 
 export default function VapidPage() {
-  const { sdkReady, sdkError, configMissing } = useInTrack();
+  const { sdkReady, sdkError, configMissing, panelType } = useInTrack();
   const [status, setStatus] = useState<PushSubscriptionStatus | 'loading' | 'unavailable'>('loading');
-  const [initialized, setInitialized] = useState(false);
+  // Guard against re-initializing on every render; a ref (not state) keeps this
+  // out of the render path so it can be set inside the effect without re-rendering.
+  const initialized = useRef(false);
   const [widgetEnabled, setWidgetEnabled] = useState(true);
 
   useEffect(() => {
-    if (!sdkReady || initialized) return;
+    if (!sdkReady || initialized.current) return;
+    initialized.current = true;
     initWebPush(webPushConfig);
-    setInitialized(true);
     getSubscriptionStatus().then(setStatus);
-  }, [sdkReady, initialized]);
+  }, [sdkReady]);
 
   const refreshStatus = () => {
     if (!sdkReady) return;
@@ -126,9 +129,26 @@ export default function VapidPage() {
 
       {configMissing && (
         <div className="rounded-lg border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm text-yellow-800 dark:text-yellow-300">
-          inTrack SDK keys are not configured. Set{' '}
-          <code className="font-mono text-xs">NEXT_PUBLIC_INTRACK_*</code> in{' '}
-          <code className="font-mono text-xs">.env.local</code> and restart the server.
+          inTrack SDK keys are not configured. Go to{' '}
+          <Link href="/setup" className="underline font-medium">
+            Setup
+          </Link>{' '}
+          to choose your panel type and enter your credentials.
+        </div>
+      )}
+
+      {panelType === 'firebase' && (
+        <div className="rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 p-4 text-sm text-purple-800 dark:text-purple-300">
+          Your panel is configured as <strong>Firebase</strong>. This VAPID page is shown for
+          reference and won&apos;t reflect your panel. Use{' '}
+          <Link href="/push/firebase" className="underline font-medium">
+            Push: Firebase
+          </Link>{' '}
+          instead, or switch types from{' '}
+          <Link href="/setup" className="underline font-medium">
+            Setup
+          </Link>
+          .
         </div>
       )}
 

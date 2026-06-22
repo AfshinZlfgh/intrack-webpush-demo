@@ -1,12 +1,33 @@
 'use client';
 
 import Script from 'next/script';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { InTrackConfig } from '@/lib/types';
+import {
+  type PanelType,
+  getDemoConfigSnapshot,
+  subscribeDemoConfig,
+} from '@/lib/demoConfig';
 
 type SDKState = 'loading' | 'ready' | 'error';
 
-const InTrackContext = createContext<{ sdkReady: boolean; sdkError: boolean; configMissing: boolean }>({
+interface InTrackContextValue {
+  /** localStorage has been read on the client (avoids SSR/hydration guessing). */
+  hydrated: boolean;
+  /** A panel type is chosen and the required inTrack credentials are present. */
+  configured: boolean;
+  /** The chosen panel type, or null until the demo is set up. */
+  panelType: PanelType | null;
+  sdkReady: boolean;
+  sdkError: boolean;
+  /** Backwards-compatible alias: true once hydrated and not yet configured. */
+  configMissing: boolean;
+}
+
+const InTrackContext = createContext<InTrackContextValue>({
+  hydrated: false,
+  configured: false,
+  panelType: null,
   sdkReady: false,
   sdkError: false,
   configMissing: false,
@@ -16,49 +37,68 @@ export function useInTrack() {
   return useContext(InTrackContext);
 }
 
+// Stable references for useSyncExternalStore.
+const noopSubscribe = () => () => {};
+const getServerConfig = () => null;
+
 export function InTrackProvider({ children }: { children: React.ReactNode }) {
-  const configMissing =
-    !process.env.NEXT_PUBLIC_INTRACK_APP_KEY ||
-    !process.env.NEXT_PUBLIC_INTRACK_AUTH_KEY ||
-    !process.env.NEXT_PUBLIC_INTRACK_PUBLIC_KEY;
+  // Subscribe to the localStorage-backed demo config. Server snapshot is null, so
+  // SSR and the first client render agree; React re-renders post-hydration.
+  const demoConfig = useSyncExternalStore(subscribeDemoConfig, getDemoConfigSnapshot, getServerConfig);
+  // True only after hydration — lets consumers avoid flashing "not configured".
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
-  const [state, setState] = useState<SDKState>(configMissing ? 'error' : 'loading');
+  const [state, setState] = useState<SDKState>('loading');
 
-  // Listen for custom events dispatched from the IIFE's s.onload / s.onerror,
-  // which fire after the inTrack CDN script has actually loaded.
+  // The inTrack CDN script dispatches these once it has actually loaded/failed.
+  // setState only happens inside the event callbacks, never synchronously here.
   useEffect(() => {
-    if (configMissing) return;
-
+    if (!demoConfig) return;
     const onReady = () => setState('ready');
     const onError = () => setState('error');
-
     window.addEventListener('intrack:ready', onReady);
     window.addEventListener('intrack:error', onError);
-
     return () => {
       window.removeEventListener('intrack:ready', onReady);
       window.removeEventListener('intrack:error', onError);
     };
-  }, [configMissing]);
+  }, [demoConfig]);
 
-  const config: InTrackConfig = {
-    app_key: process.env.NEXT_PUBLIC_INTRACK_APP_KEY ?? '',
-    auth_key: process.env.NEXT_PUBLIC_INTRACK_AUTH_KEY ?? '',
-    public_key: process.env.NEXT_PUBLIC_INTRACK_PUBLIC_KEY ?? '',
-    environment: (process.env.NEXT_PUBLIC_INTRACK_ENV as 'production' | 'stage') ?? 'production',
-    debug: process.env.NEXT_PUBLIC_INTRACK_DEBUG === 'true',
-    sw_path: '/sw.js',
+  const configured = demoConfig !== null;
+
+  const sdkConfig: InTrackConfig | null = useMemo(() => {
+    if (!demoConfig) return null;
+    const { credentials } = demoConfig;
+    return {
+      app_key: credentials.app_key,
+      auth_key: credentials.auth_key,
+      public_key: credentials.public_key, // '' for Firebase panels — unused there
+      environment: credentials.environment,
+      debug: credentials.debug,
+      sw_path: '/sw.js',
+    };
+  }, [demoConfig]);
+
+  const value: InTrackContextValue = {
+    hydrated,
+    configured,
+    panelType: demoConfig?.panelType ?? null,
+    sdkReady: state === 'ready',
+    sdkError: state === 'error',
+    configMissing: hydrated && !configured,
   };
 
   return (
-    <InTrackContext.Provider value={{ sdkReady: state === 'ready', sdkError: state === 'error', configMissing }}>
-      {!configMissing && (
+    <InTrackContext.Provider value={value}>
+      {sdkConfig && (
         <Script
+          // Keyed by credentials so switching panels/keys re-injects a fresh init.
           id="intrack-sdk"
+          key={`${sdkConfig.app_key}:${sdkConfig.environment}`}
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              var inTrack_config = ${JSON.stringify(config)};
+              var inTrack_config = ${JSON.stringify(sdkConfig)};
               (function(i,n,t,r,a,c){
                 o=i['InTrack']=i['InTrack']||{};
                 i[a]=i[a]||function(){(o.q=o.q||[]).push(arguments);};

@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
+import { DEMO_PREFIX } from '@/lib/demoConfig';
 
 export interface FirebaseConfig {
   apiKey: string;
@@ -11,7 +12,9 @@ export interface FirebaseConfig {
   vapidKey: string;
 }
 
-const STORAGE_KEY = 'intrack_demo_firebase_config';
+// Namespaced under DEMO_PREFIX so resetDemo() wipes it along with the rest of the
+// demo's stored data.
+const STORAGE_KEY = `${DEMO_PREFIX}firebase_config`;
 
 export function getStoredFirebaseConfig(): FirebaseConfig | null {
   if (typeof window === 'undefined') return null;
